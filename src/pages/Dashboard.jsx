@@ -1,77 +1,103 @@
-function Dashboard() {
-  const systemData = {
-    gasLevel: 72, // Use numbers for easier logic
-    temperature: "38°C",
-    wasteLevel: "Full",
-    status: "Active"
+import React, { useState, useEffect } from 'react';
+import { FaThermometerHalf, FaGasPump, FaTachometerAlt } from 'react-icons/fa';
+import { WiHumidity } from 'react-icons/wi';
+import MetricCard from '../components/MetricCard';
+import SensorChart from '../components/SensorChart';
+import NotificationPanel from '../components/NotificationPanel';
+
+const Dashboard = () => {
+  // 1. Initialize State with starting values
+  const [readings, setReadings] = useState({
+    temperature: 35.0,
+    humidity: 60,
+    gas: 72,
+    pressure: 1013 // Adjusted to realistic millibar (hPa) baseline
+  });
+
+  // 2. Helper function to simulate realistic sensor drift
+  // It takes the current value, adds a small random change, and keeps it within min/max bounds
+  const simulateDrift = (current, min, max, volatility, isInteger = false) => {
+    const change = (Math.random() - 0.5) * volatility; 
+    let newValue = current + change;
+    
+    // Clamp values so they don't go out of realistic bounds
+    if (newValue > max) newValue = max;
+    if (newValue < min) newValue = min;
+
+    return isInteger ? Math.round(newValue) : parseFloat(newValue.toFixed(1));
   };
 
-  const alerts = [
-    { text: "Gas production normal", type: "success" },
-    { text: "Temperature stable", type: "success" },
-    { text: "Waste level nearing capacity", type: "warning" }
+  // 3. Effect Hook to update data every 2 seconds
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setReadings((prev) => ({
+        temperature: simulateDrift(prev.temperature, 28, 42, 0.8), // Fluctuate +/- 0.4 deg
+        humidity: simulateDrift(prev.humidity, 40, 90, 3, true),   // Fluctuate +/- 1.5%
+        gas: simulateDrift(prev.gas, 10, 95, 4, true),             // Fluctuate +/- 2%
+        pressure: simulateDrift(prev.pressure, 980, 1050, 2, true) // Fluctuate +/- 1 mbar
+      }));
+    }, 2000); // Update every 2000ms (2 seconds)
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(intervalId);
+  }, []);
+
+  // 4. Map state data to the metric configuration
+  // We reconstruct the array on every render with the latest 'readings'
+  const metrics = [
+    { 
+      title: "Temperature", 
+      value: readings.temperature, 
+      unit: "°C", 
+      icon: <FaThermometerHalf />, 
+      theme: "red" 
+    },
+    { 
+      title: "Humidity", 
+      value: readings.humidity, 
+      unit: "%", 
+      icon: <WiHumidity style={{ fontSize: '1.6em' }} />, 
+      theme: "blue" 
+    },
+    { 
+      title: "Gas Level", 
+      value: readings.gas, 
+      unit: "%", 
+      icon: <FaGasPump />, 
+      theme: "green" 
+    },
+    { 
+      title: "Pressure", 
+      value: readings.pressure, 
+      unit: "mbar", 
+      icon: <FaTachometerAlt />, 
+      theme: "gray" 
+    }
   ];
 
   return (
-    <div className="dashboard-wrapper">
-      <nav className="top-bar">
-            <div className="logo-group">
-                <div className="logo">BIOGAS <span>MONITOR</span></div>
-                <div className="timestamp">Updated: {new Date().toLocaleTimeString()}</div>
-            </div>
+    <div className="dashboard-content">
+      {/* Status Banner */}
+      <div className="status-banner">
+        <span className="status-dot live-pulse"></span>
+        System Status: <strong>Normal - Live</strong>
+      </div>
 
-            <div className="status-container">
-                {/* The Pulsing Dot */}
-                <span className="pulse-dot"></span>
-                <span className="status-text">SYSTEM {systemData.status.toUpperCase()}</span>
-                
-                <div className="connectivity-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 21l-12-18h24z" /> {/* Simple signal triangle */}
-                </svg>
-                <span>Live</span>
-                </div>
-            </div>
-        </nav>
+      {/* Metric Cards Grid */}
+      <div className="metrics-grid">
+        {metrics.map((metric, index) => (
+          <MetricCard key={index} {...metric} />
+        ))}
+      </div>
 
-      <main className="content">
-        {/* Metric Row */}
-        <section className="metrics-grid">
-          <div className="stat-card">
-             <span className="icon">🔥</span>
-             <p>Gas Level</p>
-             <h2>{systemData.gasLevel}%</h2>
-             <div className="gauge-bg">
-                <div className="gauge-fill" style={{width: `${systemData.gasLevel}%`}}></div>
-             </div>
-          </div>
-
-          <div className="stat-card">
-             <span className="icon">🌡️</span>
-             <p>Temperature</p>
-             <h2>{systemData.temperature}</h2>
-          </div>
-
-          <div className="stat-card warning-border">
-             <span className="icon">⚠️</span>
-             <p>Waste Level</p>
-             <h2 className={systemData.wasteLevel === "Full" ? "text-danger" : "text-success"}>
-                {systemData.wasteLevel}
-            </h2>
-          </div>
-        </section>
-
-        {/* Alerts Section */}
-        <section className="alerts-container">
-          <h3>Recent Notifications</h3>
-          {alerts.map((alert, i) => (
-            <div key={i} className={`alert-card ${alert.type}`}>
-              {alert.text}
-            </div>
-          ))}
-        </section>
-      </main>
+      {/* Bottom Section split */}
+      <div className="bottom-section grid-split">
+        {/* Pass data to chart if it accepts props, otherwise it stays static */}
+        <SensorChart data={readings} /> 
+        <NotificationPanel />
+      </div>
     </div>
   );
-}
+};
+
 export default Dashboard;

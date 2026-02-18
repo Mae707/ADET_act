@@ -1,21 +1,15 @@
-function Header() {
+import React from 'react';
+import { FaUserCircle } from 'react-icons/fa';
+
+const Header = () => {
   return (
-    <header className="app-top-header">
-      <div className="project-info">
-        <span className="project-name">SYSTEMS_CORE_V1</span>
-        <span className="divider">|</span>
-        <span className="project-lab">Frontend Project 2026</span>
-        <span className="divider">|</span>
-        <span className="status-tag">NODE_STABLE</span>
-      </div>
-      
+    <header className="header">
+      <h1 className="page-title">GasGuard: Biogas Monitoring Dashboard</h1>
       <div className="user-profile">
-        <div className="connection-speed">24ms</div>
-        <span>Admin User</span>
-        <div className="user-avatar"></div>
+        <FaUserCircle className="user-icon" />
       </div>
     </header>
   );
-}
+};
 
 export default Header;
