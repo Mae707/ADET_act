@@ -1,4 +1,16 @@
+import { useEffect, useState } from "react";
+
 function Header() {
+  const [latency, setLatency] = useState(24);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLatency(Math.floor(Math.random() * 40) + 10);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <header className="app-top-header">
       <div className="project-info">
@@ -8,9 +20,9 @@ function Header() {
         <span className="divider">|</span>
         <span className="status-tag">NODE_STABLE</span>
       </div>
-      
+
       <div className="user-profile">
-        <div className="connection-speed">24ms</div>
+        <div className="connection-speed">{latency}ms</div>
         <span>Admin User</span>
         <div className="user-avatar"></div>
       </div>
